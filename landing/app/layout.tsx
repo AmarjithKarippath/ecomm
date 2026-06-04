@@ -10,9 +10,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Lucky Rabbit — Start your online store today, sell tomorrow',
+  title: 'Sainsberry — Start your online store today, sell tomorrow',
   description:
-    'Lucky Rabbit is the all-in-one commerce platform to design your store, make your products shine, get paid, and sell everywhere your customers scroll.',
+    'Sainsberry is the all-in-one commerce platform to design your store, make your products shine, get paid, and sell everywhere your customers scroll.',
   generator: 'v0.app',
 }
 

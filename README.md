@@ -24,5 +24,5 @@ docker compose up --build
 ```
 backend/   FastAPI modular monolith
 frontend/  React + Vite merchant dashboard + storefront
-landing/   Next.js marketing site (Lucky Rabbit)
+landing/   Next.js marketing site (Sainsberry)
 ```

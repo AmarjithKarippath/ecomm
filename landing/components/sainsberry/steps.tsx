@@ -90,13 +90,13 @@ const STEPS = [
   {
     n: "01",
     title: "Choose your design",
-    body: "Start from a stunning prebuilt theme, or describe your vibe and let Lucky Rabbit generate a store that looks built just for your brand.",
+    body: "Start from a stunning prebuilt theme, or describe your vibe and let Sainsberry generate a store that looks built just for your brand.",
     visual: <DesignVisual />,
   },
   {
     n: "02",
     title: "Make your products shine",
-    body: "Drop in your photos and Lucky Rabbit polishes them, writes descriptions, and lays out product pages that turn browsers into buyers.",
+    body: "Drop in your photos and Sainsberry polishes them, writes descriptions, and lays out product pages that turn browsers into buyers.",
     visual: <ProductVisual />,
   },
   {

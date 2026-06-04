@@ -37,7 +37,7 @@ export function TopBar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <RabbitMark />
           </span>
-          Lucky Rabbit
+          Sainsberry
         </div>
         <motion.a
           href={process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:5173/login"}

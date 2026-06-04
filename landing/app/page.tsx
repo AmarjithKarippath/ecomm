@@ -1,9 +1,9 @@
-import { TopBar } from "@/components/lucky-rabbit/top-bar"
-import { Hero } from "@/components/lucky-rabbit/hero"
-import { Steps } from "@/components/lucky-rabbit/steps"
-import { Grow } from "@/components/lucky-rabbit/grow"
-import { StatBand } from "@/components/lucky-rabbit/stat-band"
-import { Cta } from "@/components/lucky-rabbit/cta"
+import { TopBar } from "@/components/sainsberry/top-bar"
+import { Hero } from "@/components/sainsberry/hero"
+import { Steps } from "@/components/sainsberry/steps"
+import { Grow } from "@/components/sainsberry/grow"
+import { StatBand } from "@/components/sainsberry/stat-band"
+import { Cta } from "@/components/sainsberry/cta"
 
 export default function Page() {
   return (

@@ -50,7 +50,7 @@ export function Cta() {
           </Reveal>
 
           <p className="mt-4 text-xs text-ink-foreground/50">
-            By continuing, you agree to receive Lucky Rabbit product updates.
+            By continuing, you agree to receive Sainsberry product updates.
           </p>
         </div>
       </div>

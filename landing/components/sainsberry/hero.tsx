@@ -66,7 +66,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground text-pretty">
-            Lucky Rabbit gives you everything to start an online business — a
+            Sainsberry gives you everything to start an online business — a
             beautiful storefront, smart product pages, and a checkout shoppers
             trust. No code, no luck required.
           </p>
@@ -104,7 +104,7 @@ export function Hero() {
               <span className="h-3 w-3 rounded-full bg-accent" />
               <span className="h-3 w-3 rounded-full bg-primary" />
               <span className="ml-3 rounded-md bg-background px-3 py-1 text-xs text-muted-foreground">
-                luckyrabbit.shop
+                sainsberry.com
               </span>
             </div>
             <div className="p-5">
