@@ -1,26 +1,41 @@
-# Production overlay. Use with:
+# Production overlay for a VPS with CloudPanel (or any host-managed reverse
+# proxy + TLS).
+#
+# Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
-# Differences from dev:
-#   - landing runs `next start` (production build), no HMR / WebSocket needed
-#   - frontend ships a static Vite build served by Caddy
-#   - no source bind mounts (immutable image)
-#   - backend disables uvicorn --reload
-#   - Caddy reverse proxy fronts everything on 80/443 with automatic TLS
+# Each app container binds to 127.0.0.1:<port> on the host. CloudPanel sites
+# reverse-proxy those local ports and handle Let's Encrypt themselves.
+#
+# Suggested CloudPanel site mapping:
+#   sainsberry.com, www.sainsberry.com  ->  127.0.0.1:3000   (landing)
+#   app.sainsberry.com                  ->  127.0.0.1:5173   (frontend)
+#   api.sainsberry.com                  ->  127.0.0.1:8000   (backend)
 
 services:
+  # Internal infra: not reachable from the host network at all.
+  db:
+    ports: []
+
+  redis:
+    ports: []
+
   backend:
     volumes:
       - media_data:/app/media
+    ports:
+      - "127.0.0.1:8000:8000"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
     volumes: []
-    ports: []
-    # Served behind Caddy; no host port binding.
+    ports:
+      - "127.0.0.1:5173:5173"
 
   landing:
     build:
@@ -31,24 +46,6 @@ services:
     environment:
       NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL}
     volumes: []
-    ports: []
-    command: pnpm start -H 0.0.0.0 -p 3000
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - landing
-      - frontend
-      - backend
-
-volumes:
-  caddy_data:
-  caddy_config:
+      - "127.0.0.1:3000:3000"
+    command: pnpm start -H 0.0.0.0 -p 3000
