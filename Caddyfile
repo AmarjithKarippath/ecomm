@@ -1,0 +1,17 @@
+# Caddy auto-issues + renews Let's Encrypt certs. Open ports 80 + 443 on the VPS
+# firewall and make sure DNS A records point to this server BEFORE first start.
+
+sainsberry.com, www.sainsberry.com {
+    encode gzip zstd
+    reverse_proxy landing:3000
+}
+
+app.sainsberry.com {
+    encode gzip zstd
+    reverse_proxy frontend:5173
+}
+
+api.sainsberry.com {
+    encode gzip zstd
+    reverse_proxy backend:8000
+}

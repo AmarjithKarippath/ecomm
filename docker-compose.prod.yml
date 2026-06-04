@@ -1,0 +1,54 @@
+# Production overlay. Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Differences from dev:
+#   - landing runs `next start` (production build), no HMR / WebSocket needed
+#   - frontend ships a static Vite build served by Caddy
+#   - no source bind mounts (immutable image)
+#   - backend disables uvicorn --reload
+#   - Caddy reverse proxy fronts everything on 80/443 with automatic TLS
+
+services:
+  backend:
+    volumes:
+      - media_data:/app/media
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    volumes: []
+    ports: []
+    # Served behind Caddy; no host port binding.
+
+  landing:
+    build:
+      context: ./landing
+      target: runner
+      args:
+        NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL}
+    environment:
+      NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL}
+    volumes: []
+    ports: []
+    command: pnpm start -H 0.0.0.0 -p 3000
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - landing
+      - frontend
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
