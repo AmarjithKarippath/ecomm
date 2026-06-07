@@ -5,14 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .db import Base, engine
 from . import models  # noqa: F401  ensure models register with Base
 from .modules import auth, checkout, orders, products, seo, storefront
 
 
 def create_app() -> FastAPI:
-    Base.metadata.create_all(bind=engine)
-
+    # Schema is managed by Alembic — see backend/alembic/versions and the
+    # container entrypoint which runs `alembic upgrade head` before uvicorn.
     app = FastAPI(title="ecomm API", version="0.1.0")
 
     app.add_middleware(
