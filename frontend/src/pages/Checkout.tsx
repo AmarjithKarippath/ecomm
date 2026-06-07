@@ -1,10 +1,12 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, CheckoutInput, Store } from "../api";
-import { CartLine, cartTotalCents, clearCart, formatPrice, getCart } from "../cart";
+import { api, CheckoutInput, PublicAddon, PublicProduct, Store } from "../api";
+import {
+  CartLine, cartTotalCents, clearCart, formatPrice, getAddons, getCart,
+} from "../cart";
 import StorefrontHeader from "../components/StorefrontHeader";
 
-type Form = Omit<CheckoutInput, "items">;
+type Form = Omit<CheckoutInput, "items" | "addon_ids">;
 
 const emptyForm: Form = {
   buyer_email: "",
@@ -23,14 +25,34 @@ export default function Checkout() {
   const { slug = "" } = useParams();
   const nav = useNavigate();
   const [store, setStore] = useState<Store | null>(null);
-  const [lines, setLines] = useState<CartLine[]>(() => getCart(slug));
+  const [product, setProduct] = useState<PublicProduct | null>(null);
+  const [lines] = useState<CartLine[]>(() => getCart(slug));
+  const [addonIds] = useState<number[]>(() => getAddons(slug));
   const [form, setForm] = useState<Form>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.getPublicStore(slug).then((p) => setStore(p.store)).catch((e) => setError(e.message));
+    api.getPublicStore(slug).then((p) => {
+      setStore(p.store);
+      setProduct(p.product);
+    }).catch((e) => setError(e.message));
   }, [slug]);
+
+  const mainQty = lines[0]?.quantity ?? 0;
+  const subtotal = cartTotalCents(lines);
+  const earnedTier = useMemo(() => {
+    const tiers = product?.tiers ?? [];
+    const eligible = tiers.filter((t) => t.min_quantity <= mainQty);
+    return eligible.reduce<typeof eligible[number] | null>(
+      (best, t) => (!best || t.discount_pct > best.discount_pct ? t : best),
+      null,
+    );
+  }, [product, mainQty]);
+  const discount = earnedTier ? Math.floor(subtotal * earnedTier.discount_pct / 100) : 0;
+  const selectedAddons: PublicAddon[] = (product?.addons ?? []).filter((a) => addonIds.includes(a.id));
+  const addonsTotal = selectedAddons.reduce((s, a) => s + a.price_cents, 0);
+  const total = Math.max(0, subtotal - discount) + addonsTotal;
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -52,6 +74,7 @@ export default function Checkout() {
         notes: form.notes || null,
         country: form.country.toUpperCase(),
         items: lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+        addon_ids: addonIds,
       });
       clearCart(slug);
       nav(`/s/${slug}/orders/${order.order_number}`, { replace: true });
@@ -65,8 +88,7 @@ export default function Checkout() {
   if (error && !store) return <div className="container"><div className="card"><h2>{error}</h2></div></div>;
   if (!store) return <div className="container"><p className="muted">Loading...</p></div>;
 
-  const currency = lines[0]?.currency || "USD";
-  const total = cartTotalCents(lines);
+  const currency = lines[0]?.currency || product?.currency || "USD";
 
   return (
     <>
@@ -137,6 +159,7 @@ export default function Checkout() {
               <button className="btn" disabled={busy} style={{ marginTop: 12 }}>
                 {busy ? "Placing order..." : `Place order · ${formatPrice(total, currency)}`}
               </button>
+              <p className="muted tiny" style={{ marginTop: 8 }}>You'll pay in cash on delivery.</p>
             </form>
 
             <aside className="card">
@@ -151,11 +174,27 @@ export default function Checkout() {
                   <div>{formatPrice(l.unit_price_cents * l.quantity, l.currency)}</div>
                 </div>
               ))}
+              {selectedAddons.map((a) => (
+                <div key={`addon-${a.id}`} className="row" style={{ marginBottom: 10 }}>
+                  {a.image_url ? <img className="thumb" src={a.image_url} alt="" /> : <div className="thumb" />}
+                  <div className="grow">
+                    <div style={{ fontWeight: 600 }}>{a.name}</div>
+                    <div className="muted" style={{ fontSize: 13 }}>Add-on</div>
+                  </div>
+                  <div>{formatPrice(a.price_cents, currency)}</div>
+                </div>
+              ))}
               <hr style={{ border: 0, borderTop: "1px solid #eef0f2", margin: "12px 0" }} />
               <div className="row">
                 <div className="grow muted">Subtotal</div>
-                <div>{formatPrice(total, currency)}</div>
+                <div>{formatPrice(subtotal + addonsTotal, currency)}</div>
               </div>
+              {discount > 0 && earnedTier && (
+                <div className="row" style={{ color: "#047857" }}>
+                  <div className="grow">Tier discount (Buy {earnedTier.min_quantity}+, save {earnedTier.discount_pct}%)</div>
+                  <div>−{formatPrice(discount, currency)}</div>
+                </div>
+              )}
               <div className="row">
                 <div className="grow muted">Shipping</div>
                 <div>Calculated at delivery</div>

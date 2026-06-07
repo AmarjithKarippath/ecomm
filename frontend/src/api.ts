@@ -4,23 +4,57 @@ const USER_KEY = "ecomm.user";
 
 export type Store = { id: number; name: string; slug: string };
 export type User = { id: number; email: string; store: Store };
+
+export type ProductImage = { id: number; url: string; alt: string | null; position: number };
+export type ProductImageInput = Omit<ProductImage, "id">;
+
+export type ProductTier = { id: number; min_quantity: number; discount_pct: number };
+export type ProductTierInput = Omit<ProductTier, "id">;
+
+export type ProductAddon = {
+  id: number;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  image_url: string | null;
+  is_active: boolean;
+  position: number;
+};
+export type ProductAddonInput = Omit<ProductAddon, "id">;
+
 export type Product = {
   id: number;
   store_id: number;
   name: string;
+  subtitle: string | null;
   description: string | null;
   price_cents: number;
+  compare_at_price_cents: number | null;
   currency: string;
   image_url: string | null;
   inventory: number;
+  sale_ends_at: string | null;
+  low_stock_threshold: number;
+  images: ProductImage[];
+  tiers: ProductTier[];
+  addons: ProductAddon[];
 };
-export type ProductInput = Omit<Product, "id" | "store_id">;
+export type ProductInput = {
+  name: string;
+  subtitle?: string | null;
+  description?: string | null;
+  price_cents: number;
+  compare_at_price_cents?: number | null;
+  currency: string;
+  image_url?: string | null;
+  inventory: number;
+  sale_ends_at?: string | null;
+  low_stock_threshold: number;
+};
 
-export type PublicProduct = Omit<Product, "store_id">;
-export type StorePage = {
-  store: Store;
-  products: PublicProduct[];
-};
+export type PublicAddon = Omit<ProductAddon, "is_active" | "position">;
+export type PublicProduct = Omit<Product, "store_id" | "addons"> & { addons: PublicAddon[] };
+export type StorePage = { store: Store; product: PublicProduct | null };
 
 export type CheckoutInput = {
   buyer_email: string;
@@ -34,10 +68,13 @@ export type CheckoutInput = {
   country: string;
   notes?: string | null;
   items: { product_id: number; quantity: number }[];
+  addon_ids: number[];
 };
 
 export type OrderItemOut = {
-  product_id: number;
+  kind: "product" | "addon";
+  product_id: number | null;
+  addon_id: number | null;
   name: string;
   unit_price_cents: number;
   quantity: number;
@@ -66,6 +103,8 @@ export type MerchantOrderDetail = MerchantOrderSummary & {
   state: string | null;
   postal_code: string;
   notes: string | null;
+  subtotal_cents: number;
+  discount_cents: number;
   items: OrderItemOut[];
   allowed_next_statuses: string[];
 };
@@ -76,7 +115,10 @@ export type OrderOut = {
   status: string;
   payment_method: string;
   currency: string;
+  subtotal_cents: number;
+  discount_cents: number;
   total_cents: number;
+  applied_tier_id: number | null;
   buyer_email: string;
   shipping_name: string;
   shipping_phone: string;
@@ -140,7 +182,12 @@ export const api = {
     }),
   me: () => request<User>("/auth/me"),
 
+  // Single-product helpers
   listProducts: () => request<Product[]>("/products"),
+  getMyProduct: async (): Promise<Product | null> => {
+    const list = await request<Product[]>("/products");
+    return list[0] ?? null;
+  },
   getProduct: (id: number) => request<Product>(`/products/${id}`),
   createProduct: (p: ProductInput) =>
     request<Product>("/products", { method: "POST", body: JSON.stringify(p) }),
@@ -149,6 +196,35 @@ export const api = {
   deleteProduct: (id: number) =>
     request<void>(`/products/${id}`, { method: "DELETE" }),
 
+  // Gallery
+  addGalleryImage: (productId: number, img: ProductImageInput) =>
+    request<ProductImage>(`/products/${productId}/gallery`, {
+      method: "POST", body: JSON.stringify(img),
+    }),
+  deleteGalleryImage: (productId: number, imageId: number) =>
+    request<void>(`/products/${productId}/gallery/${imageId}`, { method: "DELETE" }),
+
+  // Tiers
+  addTier: (productId: number, t: ProductTierInput) =>
+    request<ProductTier>(`/products/${productId}/tiers`, {
+      method: "POST", body: JSON.stringify(t),
+    }),
+  deleteTier: (productId: number, tierId: number) =>
+    request<void>(`/products/${productId}/tiers/${tierId}`, { method: "DELETE" }),
+
+  // Addons
+  addAddon: (productId: number, a: ProductAddonInput) =>
+    request<ProductAddon>(`/products/${productId}/addons`, {
+      method: "POST", body: JSON.stringify(a),
+    }),
+  updateAddon: (productId: number, addonId: number, a: ProductAddonInput) =>
+    request<ProductAddon>(`/products/${productId}/addons/${addonId}`, {
+      method: "PUT", body: JSON.stringify(a),
+    }),
+  deleteAddon: (productId: number, addonId: number) =>
+    request<void>(`/products/${productId}/addons/${addonId}`, { method: "DELETE" }),
+
+  // Storefront / checkout
   getPublicStore: (slug: string) => request<StorePage>(`/public/stores/${slug}`),
   getPublicProduct: (slug: string, id: number) =>
     request<PublicProduct>(`/public/stores/${slug}/products/${id}`),

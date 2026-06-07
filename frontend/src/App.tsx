@@ -27,7 +27,7 @@ function Nav() {
     <div className="nav">
       <div className="row" style={{ gap: 16 }}>
         <span className="brand">ecomm</span>
-        <Link to="/products">Products</Link>
+        <Link to="/products">Your Product</Link>
         <Link to="/orders">Orders</Link>
       </div>
       <div className="row" style={{ gap: 12 }}>

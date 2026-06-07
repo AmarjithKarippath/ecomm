@@ -7,22 +7,23 @@ export type CartLine = {
   quantity: number;
 };
 
-const key = (slug: string) => `ecomm.cart.${slug}`;
+const lineKey   = (slug: string) => `ecomm.cart.${slug}`;
+const addonsKey = (slug: string) => `ecomm.cart.${slug}.addons`;
 
 export function getCart(slug: string): CartLine[] {
-  const raw = localStorage.getItem(key(slug));
+  const raw = localStorage.getItem(lineKey(slug));
   return raw ? (JSON.parse(raw) as CartLine[]) : [];
 }
 
 export function saveCart(slug: string, lines: CartLine[]) {
-  localStorage.setItem(key(slug), JSON.stringify(lines));
+  localStorage.setItem(lineKey(slug), JSON.stringify(lines));
   window.dispatchEvent(new CustomEvent("cart-changed", { detail: { slug } }));
 }
 
 export function addToCart(slug: string, line: Omit<CartLine, "quantity">, qty = 1) {
   const lines = getCart(slug);
   const existing = lines.find((l) => l.product_id === line.product_id);
-  if (existing) existing.quantity += qty;
+  if (existing) existing.quantity = qty;  // single-product: latest qty wins
   else lines.push({ ...line, quantity: qty });
   saveCart(slug, lines);
 }
@@ -39,7 +40,9 @@ export function removeFromCart(slug: string, productId: number) {
 }
 
 export function clearCart(slug: string) {
-  saveCart(slug, []);
+  localStorage.removeItem(lineKey(slug));
+  localStorage.removeItem(addonsKey(slug));
+  window.dispatchEvent(new CustomEvent("cart-changed", { detail: { slug } }));
 }
 
 export function cartCount(slug: string): number {
@@ -48,6 +51,17 @@ export function cartCount(slug: string): number {
 
 export function cartTotalCents(lines: CartLine[]): number {
   return lines.reduce((s, l) => s + l.unit_price_cents * l.quantity, 0);
+}
+
+// --- Addons selected on the product page, carried through cart -> checkout ---
+export function getAddons(slug: string): number[] {
+  const raw = localStorage.getItem(addonsKey(slug));
+  return raw ? (JSON.parse(raw) as number[]) : [];
+}
+
+export function setAddons(slug: string, ids: number[]) {
+  localStorage.setItem(addonsKey(slug), JSON.stringify(ids));
+  window.dispatchEvent(new CustomEvent("cart-changed", { detail: { slug } }));
 }
 
 export function formatPrice(cents: number, currency: string): string {

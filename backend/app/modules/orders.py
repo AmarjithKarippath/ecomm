@@ -21,7 +21,9 @@ ALL_STATUSES = list(ALLOWED_TRANSITIONS.keys())
 
 
 class OrderItemOut(BaseModel):
-    product_id: int
+    kind: str  # "product" | "addon"
+    product_id: int | None
+    addon_id: int | None
     name: str
     unit_price_cents: int
     quantity: int
@@ -50,6 +52,8 @@ class OrderDetail(OrderSummary):
     state: str | None
     postal_code: str
     notes: str | None
+    subtotal_cents: int
+    discount_cents: int
     items: list[OrderItemOut]
     allowed_next_statuses: list[str]
 
@@ -95,9 +99,13 @@ def _detail(o: Order) -> OrderDetail:
         state=o.state,
         postal_code=o.postal_code,
         notes=o.notes,
+        subtotal_cents=o.subtotal_cents,
+        discount_cents=o.discount_cents,
         items=[
             OrderItemOut(
+                kind=i.kind,
                 product_id=i.product_id,
+                addon_id=i.addon_id,
                 name=i.name_snapshot,
                 unit_price_cents=i.unit_price_cents,
                 quantity=i.quantity,

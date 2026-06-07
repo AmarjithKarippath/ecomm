@@ -82,14 +82,27 @@ export default function OrderDetail() {
               <tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
             </thead>
             <tbody>
-              {order.items.map((i) => (
-                <tr key={i.product_id}>
-                  <td>{i.name}</td>
+              {order.items.map((i, idx) => (
+                <tr key={`${i.kind}-${i.product_id ?? i.addon_id}-${idx}`}>
+                  <td>
+                    {i.name}
+                    {i.kind === "addon" && <span className="muted" style={{ marginLeft: 6, fontSize: 12 }}>· Add-on</span>}
+                  </td>
                   <td>{i.quantity}</td>
                   <td>{formatPrice(i.unit_price_cents, order.currency)}</td>
                   <td>{formatPrice(i.line_total_cents, order.currency)}</td>
                 </tr>
               ))}
+              <tr>
+                <td colSpan={3} style={{ textAlign: "right" }} className="muted">Subtotal</td>
+                <td>{formatPrice(order.subtotal_cents, order.currency)}</td>
+              </tr>
+              {order.discount_cents > 0 && (
+                <tr style={{ color: "#047857" }}>
+                  <td colSpan={3} style={{ textAlign: "right" }}>Tier discount</td>
+                  <td>−{formatPrice(order.discount_cents, order.currency)}</td>
+                </tr>
+              )}
               <tr>
                 <td colSpan={3} style={{ textAlign: "right", fontWeight: 700 }}>Total</td>
                 <td style={{ fontWeight: 700 }}>{formatPrice(order.total_cents, order.currency)}</td>
