@@ -1,3 +1,11 @@
+# Base service definitions only. NO host port bindings here — those live in
+# docker-compose.override.yml (auto-loaded for local dev) and
+# docker-compose.prod.yml (explicit -f for production).
+#
+# Why: Compose v2 *concatenates* the `ports` list across files instead of
+# replacing it. Keeping ports in the base file leaks dev mappings into prod
+# and prevents the prod override from binding its own ports.
+
 services:
   db:
     image: postgres:16-alpine
@@ -5,8 +13,6 @@ services:
       POSTGRES_USER: ecomm
       POSTGRES_PASSWORD: ecomm
       POSTGRES_DB: ecomm
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,8 +23,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
 
   backend:
     build: ./backend
@@ -26,22 +30,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
     volumes:
-      - ./backend:/app
       - media_data:/app/media
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build: ./frontend
     env_file: .env
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
 
   landing:
     build:
@@ -49,13 +43,6 @@ services:
       target: dev
     environment:
       NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:5173/login}
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./landing:/app
-      - /app/node_modules
-      - /app/.next
-    command: pnpm dev -H 0.0.0.0 -p 3000
 
 volumes:
   db_data:
