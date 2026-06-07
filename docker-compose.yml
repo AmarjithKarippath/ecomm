@@ -1,14 +1,15 @@
-# Base service definitions only. NO host port bindings here — those live in
-# docker-compose.override.yml (auto-loaded for local dev) and
-# docker-compose.prod.yml (explicit -f for production).
+# Single production compose file. CloudPanel reverse-proxies to:
+#   sainsberry.com, www.sainsberry.com  ->  http://127.0.0.1:3003   (landing)
+#   app.sainsberry.com                  ->  http://127.0.0.1:3004   (frontend)
+#   api.sainsberry.com                  ->  http://127.0.0.1:8003   (backend)
 #
-# Why: Compose v2 *concatenates* the `ports` list across files instead of
-# replacing it. Keeping ports in the base file leaks dev mappings into prod
-# and prevents the prod override from binding its own ports.
+# db + redis are NOT published to the host — they only exist on the internal
+# Docker network and are reachable from backend at `db:5432` / `redis:6379`.
 
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ecomm
       POSTGRES_PASSWORD: ecomm
@@ -23,26 +24,39 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
 
   backend:
     build: ./backend
+    restart: unless-stopped
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - media_data:/app/media
+    ports:
+      - "127.0.0.1:8003:8000"
 
   frontend:
-    build: ./frontend
-    env_file: .env
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3004:5173"
 
   landing:
     build:
       context: ./landing
-      target: dev
+      args:
+        NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL}
+    restart: unless-stopped
     environment:
-      NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:5173/login}
+      NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL}
+    ports:
+      - "127.0.0.1:3003:3000"
 
 volumes:
   db_data:
