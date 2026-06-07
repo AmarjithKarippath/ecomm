@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 function RabbitMark() {
   return (
@@ -33,20 +34,28 @@ export function TopBar() {
       className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4"
     >
       <div className="flex w-full max-w-6xl items-center justify-between rounded-full border border-border/70 bg-background/80 px-5 py-2.5 shadow-sm backdrop-blur-md">
-        <div className="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-foreground">
+        <Link href="/" className="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <RabbitMark />
           </span>
           Sainsberry
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/blog"
+            className="hidden text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground sm:inline"
+          >
+            Blog
+          </Link>
+          <motion.a
+            href={process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:5173/login"}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary"
+          >
+            Start free
+          </motion.a>
         </div>
-        <motion.a
-          href={process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:5173/login"}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary"
-        >
-          Start free
-        </motion.a>
       </div>
     </motion.header>
   )
