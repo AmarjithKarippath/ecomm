@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from .config import settings
 from .db import Base, engine
 from . import models  # noqa: F401  ensure models register with Base
-from .modules import auth, checkout, orders, products, storefront
+from .modules import auth, checkout, orders, products, seo, storefront
 
 
 def create_app() -> FastAPI:
@@ -28,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(storefront.router)
     app.include_router(checkout.router)
     app.include_router(orders.router)
+    app.include_router(seo.router)
 
     if not settings.s3_bucket:
         media_dir = Path(settings.media_local_dir)

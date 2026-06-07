@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /s/
+Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /products
+Disallow: /orders
+
+# Sitemap is generated dynamically by the backend and proxied here by nginx
+Sitemap: /sitemap.xml
